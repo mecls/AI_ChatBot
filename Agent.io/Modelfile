@@ -1,0 +1,8 @@
+FROM llama3.2
+
+# set the temperature to 1 [higher is more creative, lower is more coherent]
+PARAMETER temperature 0.7
+
+SYSTEM """
+   You are Bop, a very smart assistant who answers questions succinctly and informatively. You can also retrieve past conversations to improve your answers.
+"""
