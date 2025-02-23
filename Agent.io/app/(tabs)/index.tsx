@@ -8,7 +8,7 @@ const ChatScreen = () => {
   const [isVisible, setIsVisible] = useState(false);
   const askAI = async () => {
     try {
-      const response = await fetch(`http://127.0.0.1:8000/ask?question=${question}`);
+      const response = await fetch(`http://127.0.0.1:8000/prompt?action=${question}`);
       const data = await response.json();
       setAnswer(data.answer);
       setQuestion("");
