@@ -61,7 +61,6 @@ from fastapi import FastAPI, Query
 import ollama
 import chromadb
 import uuid
-import requests
 import os
 from dotenv import load_dotenv
 from langsmith import Client
@@ -92,7 +91,6 @@ def convert_messages_to_ollama(messages):
                 "content": message.content
             })
     return converted_messages
-
 @app.get("/prompt")
 async def ask(action: str = Query(..., title="User Question", description="Enter a question for the chatbot")):
     """Process a user question and provide an AI-generated response."""
@@ -102,6 +100,19 @@ async def ask(action: str = Query(..., title="User Question", description="Enter
         ("system", "You are a helpful chatbot specialized in task management and organization."),
         ("user", "{question}")
     ])
+    
+    # Push prompt to LangSmith
+    try:
+        # Use a different prompt ID each time to avoid conflicts
+        prompt_id = f"question-prompt-{uuid.uuid4().hex[:8]}"
+        client.push_prompt(prompt_id, object=prompt)
+        
+        # Pull the prompt back from LangSmith
+        retrieved_prompt = client.pull_prompt(prompt_id)
+    except Exception as e:
+        # Fallback to using the original prompt if LangSmith operations fail
+        retrieved_prompt = prompt
+        print(f"LangSmith error: {str(e)}")
 
     # Get past conversations
     try:
@@ -122,8 +133,8 @@ async def ask(action: str = Query(..., title="User Question", description="Enter
     Please provide a direct and relevant response based on both the current question and any applicable past context.
     """
 
-    # Format the prompt
-    formatted_messages = prompt.format_messages(question=processed_question)
+    # Format the prompt using the retrieved prompt template
+    formatted_messages = retrieved_prompt.format_messages(question=processed_question)
     
     # Convert messages to Ollama format
     ollama_messages = convert_messages_to_ollama(formatted_messages)
